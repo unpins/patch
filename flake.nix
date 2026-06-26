@@ -24,8 +24,19 @@
       inherit self;
       name = "patch";
       binName = "patch";
+      # Upstream nixpkgs attr is `gnupatch` (binary is `patch`). pkgsAttr must
+      # name it so the engine's stdenv override targets the right attr.
+      pkgsAttr = "gnupatch";
       smoke = [ "--version" ];
       smokePattern = "GNU patch";
+
+      # Build via the unpin-llvm engine + emit a bitcode multicall module
+      # (one program). Windows cosmo path is untouched (engine is Linux-only).
+      engine = "unpin-llvm";
+      multicall = {
+        programs = [{ name = "patch"; }];
+      };
+
       build = pkgs: pkgs.pkgsStatic.gnupatch;
       windowsBuild = import ./cosmo.nix { inherit unpins-lib; };
     };
