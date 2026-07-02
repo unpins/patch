@@ -47,3 +47,5 @@ The [Releases](https://github.com/unpins/patch/releases) page has standalone bin
 
 - **Platforms:** Linux, macOS, Windows.
 - **Windows:** built via [Cosmopolitan](https://github.com/jart/cosmopolitan), not mingw — see [`cosmo.nix`](cosmo.nix). patch 2.8 added a POSIX-only symlink-attack sandbox (`src/safe.c`: `getrlimit`/`openat`/`<sys/resource.h>`) whose bundled gnulib has no mingw replacement, so the mingw cross dead-ends in a wall of POSIX gaps; Windows distros build patch under msys2/cygwin, which is the POSIX layer cosmo provides for a single binary. Three small libc fixes vs the Linux/macOS build: `-fgnu89-inline` (gnulib's `_GL_INLINE` expects gnu89 `extern inline`), pin `DIRFD_INVALID = -1` (cosmo exposes `AT_FDCWD` as a link-time `extern const int`, not a constant expression), and rename patch's static `makedirs` (cosmo's libc already exports a `makedirs`).
+- **Man pages:** `patch.1` is embedded; read with `unpin man patch`.
+- **Tests:** GNU patch's testsuite runs on native builds (0 failures under static-musl) and auto-skips on cross targets the build host can't execute.

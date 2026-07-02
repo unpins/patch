@@ -16,7 +16,7 @@
   # (incompatible-pointer rewinddir, S_IFLNK, sys/resource.h, …). Windows distros
   # build patch under msys2/cygwin — a POSIX layer — which is exactly what cosmo
   # provides for a single binary. So Windows goes through cosmo, not mingw.
-  # See ./cosmo.nix (proven: applies a real patch under wine, 0 refs, single APE).
+  # See ./cosmo.nix (proven: applies a real patch under wine, 0 refs, single PE .exe).
   outputs = { self, unpins-lib }:
     let lib = unpins-lib.lib;
     in
@@ -37,7 +37,15 @@
         programs = [{ name = "patch"; }];
       };
 
-      build = pkgs: pkgs.pkgsStatic.gnupatch;
+      build = pkgs:
+        let drv = pkgs.pkgsStatic.gnupatch; in
+        drv.overrideAttrs (old: {
+          # Run GNU patch's testsuite on native runners (0 failures under
+          # static-musl); auto-skips on crosses the build host can't execute.
+          # `ed` is a check-only input: the ed-style-patch tests shell out to it.
+          doCheck = drv.stdenv.buildPlatform.canExecute drv.stdenv.hostPlatform;
+          nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.buildPackages.ed ];
+        });
       windowsBuild = import ./cosmo.nix { inherit unpins-lib; };
     };
 }
