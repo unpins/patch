@@ -40,11 +40,19 @@
       build = pkgs:
         let drv = pkgs.pkgsStatic.gnupatch; in
         drv.overrideAttrs (old: {
-          # Run GNU patch's testsuite on native runners (0 failures under
-          # static-musl); auto-skips on crosses the build host can't execute.
-          # `ed` is a check-only input: the ed-style-patch tests shell out to it.
+          # Run GNU patch's testsuite on native runners; auto-skips on crosses
+          # the build host can't execute. `ed` is a check-only input: the
+          # ed-style-patch tests shell out to it.
           doCheck = drv.stdenv.buildPlatform.canExecute drv.stdenv.hostPlatform;
           nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.buildPackages.ed ];
+          # Drop the flaky `bad-filenames` test: its `emit_patch | patch`
+          # pipeline races — when patch fast-fails on a bad name, `cat` loses
+          # the write and prints "cat: write error: Broken pipe", which 2>&1
+          # captures into the compared output. It lost the race on i686. The
+          # other 48 tests run.
+          postPatch = (old.postPatch or "") + ''
+            sed -i '/^\tbad-filenames \\$/d' tests/Makefile.am tests/Makefile.in
+          '';
         });
       windowsBuild = import ./cosmo.nix { inherit unpins-lib; };
     };
