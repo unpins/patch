@@ -45,6 +45,14 @@
           # ed-style-patch tests shell out to it.
           doCheck = drv.stdenv.buildPlatform.canExecute drv.stdenv.hostPlatform;
           nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.buildPackages.ed ];
+          # ... but having `ed` on PATH at configure time makes
+          # `AC_PATH_PROG([ED], [ed], [ed])` bake its ABSOLUTE store path into
+          # EDITOR_PROGRAM, so the shipped binary carries a store ref that does
+          # not exist on a user's machine (and drags ed's closure). patch runs
+          # the editor through system(), so a bare name resolves via PATH at
+          # runtime — which is what every distro build ships. Pre-seed the
+          # autoconf cache var; the test suite still finds ed on PATH.
+          configureFlags = (old.configureFlags or [ ]) ++ [ "ac_cv_path_ED=ed" ];
           # Drop the flaky `bad-filenames` test: its `emit_patch | patch`
           # pipeline races — when patch fast-fails on a bad name, `cat` loses
           # the write and prints "cat: write error: Broken pipe", which 2>&1
